@@ -10,6 +10,32 @@ $ cat </dev/tcp/time.nist.gov/13
 57458 16-03-11 22:48:12 53 0 0 211.8 UTC(NIST) *
 ```
 
+### Usage
+```
+$ sh bash-portscan.sh 192.168.1.1 1-100
+Bash TCP Port Scan v0.2
+=======================
+
+[+] Start scanning - 192.168.1.1...
+[+] 80 open (http)
+[+] Done.
+```
+
+#### Verbose mode
+
+```
+$ sh bash-portscan.sh -v 192.168.1.1 1-100
+Bash TCP Port Scan v0.2
+=======================
+
+[+] Start scanning - 192.168.1.1...
+[!] 21 filtered
+[!] 22 filtered
+[!] 23 filtered
+[+] 80 open (http)
+[+] Done.
+```
+
 ### Limitations
 * UDP connection
  * Not possible to get a return code when using the UDP protocol
