@@ -16,4 +16,4 @@ $ cat </dev/tcp/time.nist.gov/13
  
 ### TODO
 - [ ] Multiple IPs
-- [ ] Quiet / verbose mode
+- [x] Quiet / verbose mode
