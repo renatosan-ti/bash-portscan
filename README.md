@@ -32,13 +32,14 @@ Bash TCP Port Scan v0.2
 [!] 21 filtered
 [!] 22 filtered
 [!] 23 filtered
+[-] 25 closed
 [+] 80 open (http)
 [+] Done.
 ```
 
 ### Limitations
 * UDP connection
- * Not possible to get a return code when using the UDP protocol
+   * Not possible to get a return code when using the UDP protocol
  
 ### TODO
 - [ ] Multiple IPs
