@@ -25,7 +25,7 @@ Bash TCP Port Scan v0.2
 
 ```
 $ sh bash-portscan.sh -v 192.168.1.1 1-100
-Bash TCP Port Scan v0.2
+Bash TCP Port Scan v0.4
 =======================
 
 [+] Start scanning - 192.168.1.1...
