@@ -29,38 +29,43 @@ BLUE="\e[0;34m"
 LBLUE="\e[1;34m"
 CYAN="\e[0;36m"
 LCYAN="\e[1;36m"
-NO_COLOUR="\e[0m"
+NC="\e[0m"
 
-version="0.2"
+version="0.4"
 verbose=0
 
-showBanner() {
-	printf "${WHITE}Bash TCP Port Scan v$version\n${BLUE}=======================${NO_COLOUR}\n\n"
+show_banner()
+{
+	message="Bash TCP Port Scan v${version}"
+	printf "${WHITE}%b\n" "${message}"
+	printf "${BLUE}%0.0b=" $(seq 1 ${#message})
+	printf "\n\n${NC}"
 }
 
-usage() {
-	showBanner
-	printf "${WHITE}Usage${BLUE}:${NO_COLOUR} sh ${0##*/} [-v] <IP> <PORT(s)>\n\n\t-v\t${WHITE}Verbose mode${NO_COLOUR} (show filtered ports)\n\t-h\t${WHITE}This help${NO_COLOUR}\n\n${WHITE}Example${BLUE}:${NO_COLOUR}\n\n\t$ sh ${0##*/} 192.168.1.10 1000-2000\n\t$ sh ${0##*/} 192.168.1.2 21,22,23,25,80\n\t$ sh ${0##*/} 192.168.25.1 23 80 113\n\n"
+show_usage() {
+	show_banner
+	printf "${WHITE}Usage${BLUE}:${NC} sh ${0##*/} [-v] <IP> <PORT(s)>\n\n\t-v\t${WHITE}Verbose mode${NC} (show filtered ports)\n\t-h\t${WHITE}This help${NC}\n\n${WHITE}Example${BLUE}:${NC}\n\n\t$ sh ${0##*/} 192.168.1.10 1000-2000\n\t$ sh ${0##*/} 192.168.1.2 21,22,23,25,80\n\t$ sh ${0##*/} 192.168.25.1 23,80,113\n\n"
 	exit
 }
 
 msg() {
-	case $1 in
-		info) prefix="${LBLUE}[+]${NO_COLOUR}" ;;
-		error) prefix="${RED}[-]${NO_COLOUR}" ;;
-		alert) prefix="${YELLOW}[!]${NO_COLOUR}" ;;
+	case "$1" in
+		alert) printf "%b\n" "${YELLOW}[${WHITE}!${YELLOW}]${NC} ${@:2:${#@}}" ;;
+		error) printf "%b\n" "${RED}[${WHITE}-${RED}]${NC} ${@:2:${#@}}" ;;
+		info) printf "%b\n" "${LBLUE}[${WHITE}+${LBLUE}]${NC} ${@:2:${#@}}" ;;
 	esac
-	printf "$prefix $2\n"
 }
 
-showResults() {
-    for i in "${discoveredPorts[@]}"; do
-        if [[ $i =~ "filtered" ]]; then
-            msg alert "$i"
-        elif [[ $i =~ "open" ]]; then
-            msg info "$i"
-        fi
-    done
+show_results() {
+	for i in "${discoveredPorts[@]}"; do
+		if [[ ${i} =~ "filtered" ]]; then
+			msg alert "${i}"
+		elif [[ ${i} =~ "closed" ]]; then
+			msg error "${i}"
+		elif [[ ${i} =~ "open" ]]; then
+			msg info "${i}"
+		fi
+	done
 }
 
 # The idea is to make a sub-process to end the execution of the command.
@@ -70,63 +75,69 @@ showResults() {
 # Closed port: the command must be terminated (return code 1)
 # Filtered port: the command must be terminated (return code 143)
 
-checkPort() {
-	for port in ${ports[@]}; do
-		trap 'msg error "Canceled by the user (CTRL+C)\n"; exit 1' SIGINT
-		(pid=$BASHPID; (sleep $timeout; kill $pid) & echo >/dev/tcp/$1/$port)
+check_port() {
+	# Text from http://www.madhur.co.in/blog/2011/09/18/filteredclosed.html
+
+	# Open port (return code 0)
+	# -------------------------
+	# If you send a SYN to an open port, you would expect to receive SYN/ACK.
+
+	# Closed port (return code 1)
+	# ---------------------------
+	# If you send a SYN to a closed port, it will respond back with a RST.
+
+	# Filtered port (return code 143)
+	# -------------------------------
+	# Presumably, the host is behind some sort of firewall.
+	# Here, the packet is simply dropped and you receive no response (not even a RST).
+
+	for port in "${ports[@]}"; do
+		trap 'msg error "Canceled by the user (CTRL+C)"; exit 1' SIGINT
+		(pid=${BASHPID}; (sleep ${timeout}; kill ${pid}) & echo >/dev/tcp/${1}/${port})
 		case $? in
 			0)
-				service=$(grep -w $port/tcp $servicesFile | head -n1 | cut -d' ' -f1)
-				if [[ -z $service ]]; then
-					service="unknown"
-				fi
-				discoveredPorts+=("$port open ($service)")
+				service=$(grep -w -m 1 ${port}/tcp ${servicesFile} | cut -d' ' -f1)
+				[[ -z ${service} ]] && service="unknown"
+				discoveredPorts+=("${port} open ${BOLD}(${service})${NC}")
 			;;
-			143)
-				if ((verbose)); then
-					discoveredPorts+=("$port filtered")
-				fi
-			;;
+			1) ((verbose)) && discoveredPorts+=("${port} closed") ;;
+			143) ((verbose)) && discoveredPorts+=("${port} filtered") ;;
 		esac
 	done
-	showResults
+	show_results
 }
 
 # ---- #
 # Main #
 # -----#
 
-if [[ $# -eq 0 ]]; then
-	usage
-	exit 0
-fi
+[[ $# -lt 2 ]] && { show_usage; exit 0; }
 
 while getopts ":vh" option; do
 	case "$option" in
 		v) verbose=1 ;;
-		h) usage ;;
-		\?) msg error "Invalid option: ${WHITE}-$OPTARG${NO_COLOUR}"; exit 1 ;;
+		h) show_usage ;;
+		\?) msg error "Invalid option: ${WHITE}-$OPTARG${NC}"; exit 1 ;;
 	esac
 done
 
 shift "$((OPTIND-1))"
 
 # First argument
-IP=$1
+IP=${1}
 # From second to last argument
 PORT="${@:2:${#@}}"
 
+echo "[DEBUG] Portas: $PORT -- ${!PORT[@]}"
 # Small structure to define if ports will be
 # a range (1-2000) or sequenced values (23, 25, 80)
-if [[ $PORT =~ "-" ]]; then
+if [[ ${PORT} =~ "-" ]]; then
     ports=(${ports[@]} `seq $(echo ${PORT//-/ })`)
-elif [[ $PORT =~ "," ]]; then
+elif [[ ${PORT} =~ "," ]]; then
     ports=(${ports[@]} $(echo ${PORT//,/ }))
-else
-    ports=(${ports[@]} $(seq $PORT))
 fi
 
-showBanner
-msg info "Start scanning - $IP..."
-checkPort $IP 2>/dev/null
+show_banner
+msg info "Start scanning - ${IP}..."
+check_port ${IP} 2>/dev/null
 msg info "Done."
