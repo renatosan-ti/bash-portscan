@@ -13,7 +13,7 @@ $ cat </dev/tcp/time.nist.gov/13
 ### Usage
 ```
 $ sh bash-portscan.sh 192.168.1.1 1-100
-Bash TCP Port Scan v0.2
+Bash TCP Port Scan v0.4
 =======================
 
 [+] Start scanning - 192.168.1.1...
