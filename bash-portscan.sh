@@ -24,11 +24,8 @@ WHITE="\e[1;37m"
 BOLD="\e[0;1m"
 YELLOW="\e[0;33m"
 RED="\e[0;31m"
-PURPLE="\e[0;35m"
 BLUE="\e[0;34m"
 LBLUE="\e[1;34m"
-CYAN="\e[0;36m"
-LCYAN="\e[1;36m"
 NC="\e[0m"
 
 version="0.5"
@@ -134,7 +131,7 @@ PORT="${PORT:-1-1000}"
 # a range (1-2000), sequenced values (23, 25, 80)
 # or specific port (80)
 if [[ "${PORT}" =~ "-" ]]; then
-	ports=("${ports[@]}" $(seq $(echo "${PORT//-/ }")))
+	ports=("${ports[@]}" $(seq ${PORT//-/ }))
 elif [[ "${PORT}" =~ "," ]]; then
 	ports=("${ports[@]}" $(echo "${PORT//,/ }"))
 else
@@ -143,5 +140,5 @@ fi
 
 show_banner
 msg info "Start scanning: ${IP} / ${PORT}"
-check_port ${IP} 2>/dev/null
+check_port "${IP}" 2>/dev/null
 msg info "Done."
