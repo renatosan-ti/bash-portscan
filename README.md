@@ -13,10 +13,11 @@ $ cat </dev/tcp/time.nist.gov/13
 ### Usage
 ```
 $ sh bash-portscan.sh 192.168.1.1 1-100
-Bash TCP Port Scan v0.4
+Bash TCP Port Scan v0.5
 =======================
 
-[+] Start scanning - 192.168.1.1...
+[+] Start scanning: 192.168.1.1 / 1-100
+[+] 22 open (ssh)
 [+] 80 open (http)
 [+] Done.
 ```
@@ -25,15 +26,34 @@ Bash TCP Port Scan v0.4
 
 ```
 $ sh bash-portscan.sh -v 192.168.1.1 1-100
-Bash TCP Port Scan v0.4
+Bash TCP Port Scan v0.5
 =======================
 
-[+] Start scanning - 192.168.1.1...
-[!] 21 filtered
-[!] 22 filtered
-[!] 23 filtered
-[-] 25 closed
+[+] Start scanning: 192.168.1.1 / 1-100
+[-] 1 closed
+[-] 2 closed
+[-] 3 closed
+[-] 4 closed
+[-] 5 closed
+...
+[-] 21 closed
+[+] 22 open (ssh)
+[-] 23 closed
+[-] 24 closed
+...
+[-] 51 closed
+[-] 52 closed
+[!] 53 filtered
+[-] 54 closed
+...
+[-] 79 closed
 [+] 80 open (http)
+[-] 81 closed
+...
+[-] 97 closed
+[-] 98 closed
+[-] 99 closed
+[-] 100 closed
 [+] Done.
 ```
 
