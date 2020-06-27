@@ -1,4 +1,4 @@
-#!/bin/sh -
+#!/usr/bin/env bash
 
 # Simple Bash TCP Port Scan
 # -------------------------
@@ -14,7 +14,7 @@
 
 # Adjust timeout
 # --------------
-timeout=0.01s
+timeout="0.01s"
 
 # /etc/services file
 servicesFile="/etc/services"
@@ -31,14 +31,14 @@ CYAN="\e[0;36m"
 LCYAN="\e[1;36m"
 NC="\e[0m"
 
-version="0.4"
-verbose=0
+version="0.5"
+verbose="0"
 
 show_banner()
 {
 	message="Bash TCP Port Scan v${version}"
 	printf "${WHITE}%b\n" "${message}"
-	printf "${BLUE}%0.0b=" $(seq 1 ${#message})
+	printf "${BLUE}%0.0b=" $(seq 1 "${#message}")
 	printf "\n\n${NC}"
 }
 
@@ -49,7 +49,7 @@ show_usage() {
 }
 
 msg() {
-	case "$1" in
+	case "${1}" in
 		alert) printf "%b\n" "${YELLOW}[${WHITE}!${YELLOW}]${NC} ${@:2:${#@}}" ;;
 		error) printf "%b\n" "${RED}[${WHITE}-${RED}]${NC} ${@:2:${#@}}" ;;
 		info) printf "%b\n" "${LBLUE}[${WHITE}+${LBLUE}]${NC} ${@:2:${#@}}" ;;
@@ -58,11 +58,11 @@ msg() {
 
 show_results() {
 	for i in "${discoveredPorts[@]}"; do
-		if [[ ${i} =~ "filtered" ]]; then
+		if [[ "${i}" =~ "filtered" ]]; then
 			msg alert "${i}"
-		elif [[ ${i} =~ "closed" ]]; then
+		elif [[ "${i}" =~ "closed" ]]; then
 			msg error "${i}"
-		elif [[ ${i} =~ "open" ]]; then
+		elif [[ "${i}" =~ "open" ]]; then
 			msg info "${i}"
 		fi
 	done
@@ -92,14 +92,15 @@ check_port() {
 	# Here, the packet is simply dropped and you receive no response (not even a RST).
 
 	for port in "${ports[@]}"; do
-		trap 'msg error "Canceled by the user (CTRL+C)"; exit 1' SIGINT
-		(pid=${BASHPID}; (sleep ${timeout}; kill ${pid}) & echo >/dev/tcp/${1}/${port})
-		case $? in
+		trap 'echo; msg error "Canceled by the user (CTRL+C)"; exit 1' INT TSTP
+
+		(pid="${BASHPID}"; (sleep "${timeout}"; kill "${pid}") & echo >/dev/tcp/"${1}"/"${port}")
+		case "${?}" in
 			0)
-				service=$(grep -w -m 1 ${port}/tcp ${servicesFile} | cut -d' ' -f1)
-				[[ -z ${service} ]] && service="unknown"
-				discoveredPorts+=("${port} open ${BOLD}(${service})${NC}")
-			;;
+				service=$(grep -w -m 1 "${port}"/tcp "${servicesFile}" | cut -d' ' -f1)
+				[[ -z "${service}" ]] && service="unknown"
+					discoveredPorts+=("${port} open ${BOLD}(${service})${NC}")
+				;;
 			1) ((verbose)) && discoveredPorts+=("${port} closed") ;;
 			143) ((verbose)) && discoveredPorts+=("${port} filtered") ;;
 		esac
@@ -111,11 +112,11 @@ check_port() {
 # Main #
 # -----#
 
-[[ $# -lt 2 ]] && { show_usage; exit 0; }
+[[ $# -eq 0 ]] && { show_usage; exit 0; }
 
 while getopts ":vh" option; do
-	case "$option" in
-		v) verbose=1 ;;
+	case "${option}" in
+		v) verbose="1" ;;
 		h) show_usage ;;
 		\?) msg error "Invalid option: ${WHITE}-$OPTARG${NC}"; exit 1 ;;
 	esac
@@ -124,20 +125,23 @@ done
 shift "$((OPTIND-1))"
 
 # First argument
-IP=${1}
+IP="${1}"
 # From second to last argument
 PORT="${@:2:${#@}}"
+PORT="${PORT:-1-1000}"
 
-echo "[DEBUG] Portas: $PORT -- ${!PORT[@]}"
 # Small structure to define if ports will be
-# a range (1-2000) or sequenced values (23, 25, 80)
-if [[ ${PORT} =~ "-" ]]; then
-    ports=(${ports[@]} `seq $(echo ${PORT//-/ })`)
-elif [[ ${PORT} =~ "," ]]; then
-    ports=(${ports[@]} $(echo ${PORT//,/ }))
+# a range (1-2000), sequenced values (23, 25, 80)
+# or specific port (80)
+if [[ "${PORT}" =~ "-" ]]; then
+	ports=("${ports[@]}" $(seq $(echo "${PORT//-/ }")))
+elif [[ "${PORT}" =~ "," ]]; then
+	ports=("${ports[@]}" $(echo "${PORT//,/ }"))
+else
+	ports=("${ports[@]}" $(echo "${PORT}"))
 fi
 
 show_banner
-msg info "Start scanning - ${IP}..."
+msg info "Start scanning: ${IP} / ${PORT}"
 check_port ${IP} 2>/dev/null
 msg info "Done."
