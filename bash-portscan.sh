@@ -10,7 +10,7 @@
 # TCP connection using Bash purely
 
 # TODO:
-#	multiple IPs
+#       multiple IPs
 
 # Adjust timeout
 # --------------
@@ -33,36 +33,36 @@ verbose="0"
 
 show_banner()
 {
-	message="Bash TCP Port Scan v${version}"
-	printf "${WHITE}%b\n" "${message}"
-	printf "${BLUE}%0.0b=" $(seq 1 "${#message}")
-	printf "\n\n${NC}"
+        message="Bash TCP Port Scan v${version}"
+        printf "${WHITE}%b\n" "${message}"
+        printf "${BLUE}%0.0b=" $(seq 1 "${#message}")
+        printf "\n\n"
 }
 
 show_usage() {
-	show_banner
-	printf "${WHITE}Usage${BLUE}:${NC} sh ${0##*/} [-v] <IP> <PORT(s)>\n\n\t-v\t${WHITE}Verbose mode${NC} (show filtered ports)\n\t-h\t${WHITE}This help${NC}\n\n${WHITE}Example${BLUE}:${NC}\n\n\t$ sh ${0##*/} 192.168.1.10 1000-2000\n\t$ sh ${0##*/} 192.168.1.2 21,22,23,25,80\n\t$ sh ${0##*/} 192.168.25.1 23,80,113\n\n"
-	exit
+        show_banner
+        printf "${WHITE}Usage${BLUE}:${NC} sh ${0##*/} [-v] <IP> <PORT(s)>\n\n\t-v\t${WHITE}Verbose mode${NC} (show filtered ports)\n\t-h\t${WHITE}This help${NC}\n\n${WHITE}Example${BLUE}:${NC}\n\n\t$ sh ${0##*/} 192.168.1.10 1000-2000\n\t$ sh ${0##*/} 192.168.1.2 21,22,23,25,80\n\t%s sh ${0##*/} 192.168.25.1 23,80,113\n\n" "$"
+        exit
 }
 
 msg() {
-	case "${1}" in
-		alert) printf "%b\n" "${YELLOW}[${WHITE}!${YELLOW}]${NC} ${@:2:${#@}}" ;;
-		error) printf "%b\n" "${RED}[${WHITE}-${RED}]${NC} ${@:2:${#@}}" ;;
-		info) printf "%b\n" "${LBLUE}[${WHITE}+${LBLUE}]${NC} ${@:2:${#@}}" ;;
-	esac
+        case "${1}" in
+                alert) printf "%b\n" "${YELLOW}[${WHITE}!${YELLOW}]${NC} ${*:2:${#*}}" ;;
+                error) printf "%b\n" "${RED}[${WHITE}-${RED}]${NC} ${*:2:${#*}}" ;;
+                info) printf "%b\n" "${LBLUE}[${WHITE}+${LBLUE}]${NC} ${*:2:${#*}}" ;;
+        esac
 }
 
 show_results() {
-	for i in "${discoveredPorts[@]}"; do
-		if [[ "${i}" =~ "filtered" ]]; then
-			msg alert "${i}"
-		elif [[ "${i}" =~ "closed" ]]; then
-			msg error "${i}"
-		elif [[ "${i}" =~ "open" ]]; then
-			msg info "${i}"
-		fi
-	done
+        for i in "${discoveredPorts[@]}"; do
+                if [[ "${i}" =~ "filtered" ]]; then
+                        msg alert "${i}"
+                elif [[ "${i}" =~ "closed" ]]; then
+                        msg error "${i}"
+                elif [[ "${i}" =~ "open" ]]; then
+                        msg info "${i}"
+                fi
+        done
 }
 
 # The idea is to make a sub-process to end the execution of the command.
@@ -73,36 +73,36 @@ show_results() {
 # Filtered port: the command must be terminated (return code 143)
 
 check_port() {
-	# Text from http://www.madhur.co.in/blog/2011/09/18/filteredclosed.html
+        # Text from http://www.madhur.co.in/blog/2011/09/18/filteredclosed.html
 
-	# Open port (return code 0)
-	# -------------------------
-	# If you send a SYN to an open port, you would expect to receive SYN/ACK.
+        # Open port (return code 0)
+        # -------------------------
+        # If you send a SYN to an open port, you would expect to receive SYN/ACK.
 
-	# Closed port (return code 1)
-	# ---------------------------
-	# If you send a SYN to a closed port, it will respond back with a RST.
+        # Closed port (return code 1)
+        # ---------------------------
+        # If you send a SYN to a closed port, it will respond back with a RST.
 
-	# Filtered port (return code 143)
-	# -------------------------------
-	# Presumably, the host is behind some sort of firewall.
-	# Here, the packet is simply dropped and you receive no response (not even a RST).
+        # Filtered port (return code 143)
+        # -------------------------------
+        # Presumably, the host is behind some sort of firewall.
+        # Here, the packet is simply dropped and you receive no response (not even a RST).
 
-	for port in "${ports[@]}"; do
-		trap 'echo; msg error "Canceled by the user (CTRL+C)"; exit 1' INT TSTP
+        for port in "${ports[@]}"; do
+                trap 'echo; msg error "Canceled by the user (CTRL+C)"; exit 1' INT TSTP
 
-		(pid="${BASHPID}"; (sleep "${timeout}"; kill "${pid}") & echo >/dev/tcp/"${1}"/"${port}")
-		case "${?}" in
-			0)
-				service=$(grep -w -m 1 "${port}"/tcp "${servicesFile}" | cut -d' ' -f1)
-				[[ -z "${service}" ]] && service="unknown"
-					discoveredPorts+=("${port} open ${BOLD}(${service})${NC}")
-				;;
-			1) ((verbose)) && discoveredPorts+=("${port} closed") ;;
-			143) ((verbose)) && discoveredPorts+=("${port} filtered") ;;
-		esac
-	done
-	show_results
+                (pid="${BASHPID}"; (sleep "${timeout}"; kill "${pid}") & echo >/dev/tcp/"${1}"/"${port}")
+                case "${?}" in
+                        0)
+                                service=$(grep -w -m 1 "${port}"/tcp "${servicesFile}" | cut -d' ' -f1)
+                                [[ -z "${service}" ]] && service="unknown"
+                                        discoveredPorts+=("${port} open ${BOLD}(${service})${NC}")
+                                ;;
+                        1) ((verbose)) && discoveredPorts+=("${port} closed") ;;
+                        143) ((verbose)) && discoveredPorts+=("${port} filtered") ;;
+                esac
+        done
+        show_results
 }
 
 # ---- #
@@ -112,11 +112,11 @@ check_port() {
 [[ $# -eq 0 ]] && { show_usage; exit 0; }
 
 while getopts ":vh" option; do
-	case "${option}" in
-		v) verbose="1" ;;
-		h) show_usage ;;
-		\?) msg error "Invalid option: ${WHITE}-$OPTARG${NC}"; exit 1 ;;
-	esac
+        case "${option}" in
+                v) verbose="1" ;;
+                h) show_usage ;;
+                \?) msg error "Invalid option: ${WHITE}-$OPTARG${NC}"; exit 1 ;;
+        esac
 done
 
 shift "$((OPTIND-1))"
@@ -124,18 +124,18 @@ shift "$((OPTIND-1))"
 # First argument
 IP="${1}"
 # From second to last argument
-PORT="${@:2:${#@}}"
+PORT="${*:2:${#*}}"
 PORT="${PORT:-1-1000}"
 
 # Small structure to define if ports will be
 # a range (1-2000), sequenced values (23, 25, 80)
 # or specific port (80)
 if [[ "${PORT}" =~ "-" ]]; then
-	ports=("${ports[@]}" $(seq ${PORT//-/ }))
+        mapfile -t ports <<< "$(seq "${PORT//-/ }")"
 elif [[ "${PORT}" =~ "," ]]; then
-	ports=("${ports[@]}" $(echo "${PORT//,/ }"))
+        mapfile -t ports <<< "${PORT//,/ }"
 else
-	ports=("${ports[@]}" $(echo "${PORT}"))
+        mapfile -t ports <<< "${PORT}"
 fi
 
 show_banner
